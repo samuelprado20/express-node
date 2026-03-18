@@ -4,6 +4,7 @@ require('dotenv').config()
 const fs = require('fs')
 const path = require('path')
 const { validateUser } = require('./utils/validation.js')
+const LoggerMiddleware = require('./middlewares/logger.js')
 
 const bodyParser = require('body-parser')
 const usersFilePath = path.join(__dirname, 'users.json')
@@ -12,6 +13,7 @@ const app = express()
 
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
+app.use(LoggerMiddleware)
 
 const PORT = process.env.PORT || 3000
 
