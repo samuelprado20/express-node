@@ -5,6 +5,7 @@ const fs = require('fs')
 const path = require('path')
 const { validateUser } = require('./utils/validation.js')
 const LoggerMiddleware = require('./middlewares/logger.js')
+const errorHandler = require('./middlewares/errorHandler.js')
 
 const bodyParser = require('body-parser')
 const usersFilePath = path.join(__dirname, 'users.json')
@@ -167,6 +168,13 @@ app.delete('/users/:id', (req, res) => {
     }
   })
 })
+
+app.get('/error', (req, res, next) => {
+  next(new Error('OMG critical error, this is going down!!!!'))
+})
+
+
+app.use(errorHandler)
 
 app.listen(PORT, () => (
   console.log(`Server running on http://localhost:${PORT}`)
