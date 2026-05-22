@@ -1,5 +1,7 @@
-const express = require('express')
 require('dotenv').config()
+const express = require('express')
+const { PrismaClient } = require('./generated/prisma')
+const prisma = new PrismaClient()
 
 const fs = require('fs')
 const path = require('path')
@@ -171,6 +173,15 @@ app.delete('/users/:id', (req, res) => {
 
 app.get('/error', (req, res, next) => {
   next(new Error('OMG critical error, this is going down!!!!'))
+})
+
+app.get('/db-users', async (req, res) => {
+  try {
+    const users = await prisma.User.findMany()
+    res.json(users)
+  } catch (error) {
+    res.status(500).json({ error: 'Error communicating with database'})
+  }
 })
 
 

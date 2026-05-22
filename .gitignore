@@ -139,3 +139,8 @@ dist
 .svelte-kit
 
 users.json
+/generated/prisma
+
+docker-compose.yml
+
+/postgres_data
