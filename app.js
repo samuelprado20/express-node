@@ -2,12 +2,15 @@ require('dotenv').config()
 const express = require('express')
 const { PrismaClient } = require('./generated/prisma')
 const prisma = new PrismaClient()
+const bcrypt = require('bcryptjs')
+const jwt = require('jsonwebtoken')
 
 const fs = require('fs')
 const path = require('path')
 const { validateUser } = require('./utils/validation.js')
 const LoggerMiddleware = require('./middlewares/logger.js')
 const errorHandler = require('./middlewares/errorHandler.js')
+const authenticateToken = require('./middlewares/auth.js')
 
 const bodyParser = require('body-parser')
 const usersFilePath = path.join(__dirname, 'users.json')
@@ -182,6 +185,53 @@ app.get('/db-users', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: 'Error communicating with database'})
   }
+})
+
+app.get('/protected-route', authenticateToken, async (req, res) => {
+  console.log(`This is the user role: ${req.user.role}`)
+
+  res.send('This is a protected route')
+})
+
+app.post('/register', async (req, res, next) => {
+  try {
+    const { email, password, name } = req.body
+    const hashedPassword = await bcrypt.hash(password, 10)
+  
+    const newUser = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        role: 'USER'
+      }
+    })
+
+    return res.status(201).json({ message: 'User registered successfully' })
+  } catch (error) {
+    next(error)
+  }
+})
+
+app.post('/login', async (req, res) => {
+  const { email, password } = req.body
+  const user = await prisma.user.findUnique({ where: {email}})
+
+  if (!user)
+    return res.status(400).json({ error: 'Invalid email or password'})
+  
+  const validPassword =  await bcrypt.compare(password, user.password)
+
+  if(!validPassword) 
+    return res.status(400).json({ error: 'Invalid email or password'})
+
+  const token = jwt.sign(
+    { id: user.id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: '4h' }
+  )
+
+  res.json({ token })
 })
 
 
