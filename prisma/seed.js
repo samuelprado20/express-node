@@ -1,32 +1,66 @@
-const { PrismaClient, Role } = require('../generated/prisma');
+// prisma/seed.js
+
+const { PrismaClient } = require('../generated/prisma');
 const prisma = new PrismaClient();
 
-async function populateUserSchema() {
-  const users = [
-    { name: 'User 1', email: 'user1@example.com', password: 'password', role: USER },
-    { name: 'User 2', email: 'user2@example.com', password: 'password', role: USER },
-    { name: 'User 3', email: 'user3@example.com', password: 'password', role: USER }
-  ];
-  
-  for (const user of users) {
-    await prisma.user.create({
-      data: user
-    });
-  }
-  
-  console.log('Dummy users created successfully');
-}
-
-async function clearUserSchema() {
-  await prisma.user.deleteMany()
-  console.log('User table has been cleared successfully')
-}
-
 async function main() {
-  
+  // Create users
+  const user1 = await prisma.user.create({
+    data: {
+      email: 'user1@example.com',
+      password: 'password123',
+      name: 'User One',
+      role: 'USER'
+    }
+  });
 
+  const user2 = await prisma.user.create({
+    data: {
+      email: 'admin@example.com',
+      password: 'admin123',
+      name: 'Admin User',
+      role: 'ADMIN'
+    }
+  });
+
+  // Create timeblocks
+  const timeBlock1 = await prisma.timeBlock.create({
+    data: {
+      startTime: new Date('2023-10-01T09:00:00Z'),
+      endTime: new Date('2023-10-01T10:00:00Z')
+    }
+  });
+
+  const timeBlock2 = await prisma.timeBlock.create({
+    data: {
+      startTime: new Date('2023-10-01T10:00:00Z'),
+      endTime: new Date('2023-10-01T11:00:00Z')
+    }
+  });
+
+  // Create appointments
+  await prisma.appointment.create({
+    data: {
+      date: new Date('2023-10-01T09:00:00Z'),
+      user: { connect: { id: user1.id } },
+      timeBlock: { connect: { id: timeBlock1.id } }
+    }
+  });
+
+  await prisma.appointment.create({
+    data: {
+      date: new Date('2023-10-01T10:00:00Z'),
+      user: { connect: { id: user2.id } },
+      timeBlock: { connect: { id: timeBlock2.id } }
+    }
+  });
 }
 
 main()
-  .catch(e => console.error(e))
-  .finally(async () => await prisma.$disconnect());
+  .catch(e => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
